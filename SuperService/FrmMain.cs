@@ -84,15 +84,22 @@ namespace SuperService
             });
         }
 
+        public static void GetMacList()
+        {
+            var macList = MacHelper.GetMacList();
+            var json = JsonConvert.SerializeObject(macList);
+            _iConnection.Send(json);
+        }
+
 
         public static void HandleWebSocket(string message)
         {
-            var obj= JsonConvert.DeserializeObject<dynamic>(message);
+            var obj = JsonConvert.DeserializeObject<dynamic>(message);
             switch (obj.command.ToString())
             {
                 case "OpenSerialPort":
                     var serialPortName = obj.serialPortName.ToString();
-                    var baudRate =int.Parse(obj.baudRate.ToString());
+                    var baudRate = int.Parse(obj.baudRate.ToString());
                     OpenSerialPort(serialPortName, baudRate);
                     break;
                 case "CloseSerialPort":
@@ -101,12 +108,15 @@ namespace SuperService
                 case "GetSerialPortList":
                     GetSerialPortList();
                     break;
+                case "GetMacList":
+                    GetMacList();
+                    break;
             }
         }
 
         private void FrmMain_Load(object sender, EventArgs e)
         {
-           
+            var c = MacHelper.GetMacList();
             StartWebSocket();
         }
 
