@@ -51,7 +51,12 @@ namespace SuperService
         public static void GetSerialPortList()
         {
             string[] serialPortNames = SerialPort.GetPortNames();
-            var json = JsonConvert.SerializeObject(serialPortNames);
+            var obj = new
+            {
+                Method = "GetSerialPortList",
+                Data = serialPortNames
+            };
+            var json = JsonConvert.SerializeObject(obj);
             _iConnection.Send(json);
         }
 
@@ -84,10 +89,16 @@ namespace SuperService
             });
         }
 
-        public static void GetMacList()
+        public static void GetMacAddress()
         {
             var macList = MacHelper.GetMacList();
-            var json = JsonConvert.SerializeObject(macList);
+            var obj = new
+            {
+                Method = "GetMacAddress",
+                Data = macList[0]
+            };
+
+            var json = JsonConvert.SerializeObject(obj);
             _iConnection.Send(json);
         }
 
@@ -108,21 +119,29 @@ namespace SuperService
                 case "GetSerialPortList":
                     GetSerialPortList();
                     break;
-                case "GetMacList":
-                    GetMacList();
+                case "GetMacAddress":
+                    GetMacAddress();
                     break;
             }
         }
 
         private void FrmMain_Load(object sender, EventArgs e)
         {
-            var c = MacHelper.GetMacList();
             StartWebSocket();
         }
 
         private void FrmMain_Activated(object sender, EventArgs e)
         {
             Hide();
+        }
+
+        private void 退出ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            DialogResult dialogResult = MessageBox.Show(@"确定退出？", @"系统提示", MessageBoxButtons.OKCancel);
+            if (dialogResult == DialogResult.OK)
+            {
+                Application.Exit();
+            }
         }
     }
 }
