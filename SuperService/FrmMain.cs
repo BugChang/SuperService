@@ -1,8 +1,12 @@
 ﻿using System;
 using System.IO.Ports;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
 using System.Windows.Forms;
 using Fleck;
 using Newtonsoft.Json;
+using System.Threading.Tasks;
 
 namespace SuperService
 {
@@ -69,7 +73,13 @@ namespace SuperService
         {
             var text = _serialPort.ReadExisting();
             var value = text.Replace("\u0002", "").Replace("\r\n\u0003", "");
-            _iConnection.Send(value);
+            var obj = new
+            {
+                Method = "SerialPortReceived",
+                Data = value
+            };
+            var json = JsonConvert.SerializeObject(obj);
+            _iConnection.Send(json);
         }
 
         /// <summary>
@@ -102,6 +112,65 @@ namespace SuperService
             _iConnection.Send(json);
         }
 
+        public static void OpenDoor(string no)
+        {
+            var strCommand = "Open-Door-Request";
+
+            //通信协议
+            TcpClient objTcpClient = new TcpClient();
+            try
+            {
+                IPAddress serverAddr = IPAddress.Parse("127.0.0.1");// 取本机地址
+                objTcpClient.Connect(serverAddr, int.Parse("56789"));
+            }
+            catch
+            {
+                // ignored
+            }
+            NetworkStream objNetworkStream = objTcpClient.GetStream();
+
+            //构成XML,满足通讯协议
+            StringBuilder xmlBuilder = new StringBuilder();
+
+            string strHead = "<?xml version=\"1.0\" ?><farShine ver=\"1.0\" xmlns=\"http://www.farshine.com\"><farShine ver=\"1.0\"><Operation name=\"" + strCommand + "\">";
+            string strCauda = "</Operation></farShine></farShine>";
+
+            string strBoxNumber = "<Box NO = \"" + no + "\" bFront=\"true\" />";
+            xmlBuilder.Append(strHead);
+            xmlBuilder.Append(strBoxNumber);
+            xmlBuilder.Append(strCauda);
+
+            String strSend = xmlBuilder.ToString();
+
+            try
+            {
+                //'组XML字符串
+                // 转换字符串为字符数组，准备发送的内容
+                var data = Encoding.ASCII.GetBytes(strSend);
+                objNetworkStream.Write(data, 0, data.Length);
+                data[0] = 0;
+                objNetworkStream.Write(data, 0, 1);
+            }
+            catch (Exception)
+            {
+                objTcpClient.Close();
+            }
+            try
+            {
+                if (objNetworkStream.CanRead)
+                {
+                    byte[] dataa = new Byte[256];
+                    // 接收回答报文用的存储变量
+
+                    Int32 bytes = objNetworkStream.Read(dataa, 0, dataa.Length);// 报文读入缓冲
+                    Encoding.ASCII.GetString(dataa, 0, bytes);//报文转换成字符串
+                }
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
+        }
 
         public static void HandleWebSocket(string message)
         {
@@ -121,6 +190,10 @@ namespace SuperService
                     break;
                 case "GetMacAddress":
                     GetMacAddress();
+                    break;
+                case "OpenDoor":
+                    var no = obj.no.ToString();
+                    OpenDoor(no);
                     break;
             }
         }
