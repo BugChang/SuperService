@@ -6,7 +6,6 @@ using System.Text;
 using System.Windows.Forms;
 using Fleck;
 using Newtonsoft.Json;
-using System.Threading.Tasks;
 
 namespace SuperService
 {
@@ -14,6 +13,7 @@ namespace SuperService
     {
         #region 全局变量
 
+        private static readonly int _version = 1;
         private static SerialPort _serialPort;
         private static IWebSocketConnection _iConnection;
 
@@ -48,6 +48,19 @@ namespace SuperService
             _serialPort.Close();
         }
 
+        public static void WirteSerialPort(string text)
+        {
+            if (_serialPort != null)
+            {
+                //对于中文的话,要先对其进行编码,将其转换成 _Base64String ,否则你得不到中文字符串的 
+                byte[] data = Encoding.Unicode.GetBytes(text);
+                string str = Convert.ToBase64String(data);
+                _serialPort.WriteLine(str);
+                CloseSerialPort();
+            }
+
+        }
+
         /// <summary>
         /// 获取串口列表
         /// </summary>
@@ -61,7 +74,14 @@ namespace SuperService
                 Data = serialPortNames
             };
             var json = JsonConvert.SerializeObject(obj);
-            _iConnection.Send(json);
+            try
+            {
+                _iConnection.Send(json);
+            }
+            catch
+            {
+                // ignored
+            }
         }
 
         /// <summary>
@@ -72,14 +92,21 @@ namespace SuperService
         private static void _serialPort_DataReceived(object sender, SerialDataReceivedEventArgs e)
         {
             var text = _serialPort.ReadExisting();
-            var value = text.Replace("\u0002", "").Replace("\r\n\u0003", "");
+            var value = text.Replace("\u0002", "").Replace("\u0003", "").Replace("\r", "").Replace("\n", "").Replace("\t", "");
             var obj = new
             {
                 Method = "SerialPortReceived",
                 Data = value
             };
             var json = JsonConvert.SerializeObject(obj);
-            _iConnection.Send(json);
+            try
+            {
+                _iConnection.Send(json);
+            }
+            catch
+            {
+                // ignored
+            }
         }
 
         /// <summary>
@@ -109,7 +136,14 @@ namespace SuperService
             };
 
             var json = JsonConvert.SerializeObject(obj);
-            _iConnection.Send(json);
+            try
+            {
+                _iConnection.Send(json);
+            }
+            catch
+            {
+                // ignored
+            }
         }
 
         public static void OpenDoor(string no)
@@ -162,8 +196,7 @@ namespace SuperService
                     byte[] dataa = new Byte[256];
                     // 接收回答报文用的存储变量
 
-                    Int32 bytes = objNetworkStream.Read(dataa, 0, dataa.Length);// 报文读入缓冲
-                    Encoding.ASCII.GetString(dataa, 0, bytes);//报文转换成字符串
+                    objNetworkStream.Read(dataa, 0, dataa.Length);
                 }
             }
             catch (Exception)
@@ -215,6 +248,11 @@ namespace SuperService
             {
                 Application.Exit();
             }
+        }
+
+        private void 关于ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show(_version.ToString("0.0"));
         }
     }
 }
