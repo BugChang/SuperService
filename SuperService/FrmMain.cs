@@ -13,10 +13,9 @@ namespace SuperService
     {
         #region 全局变量
 
-        private static readonly int _version = 1;
+        private const int Version = 1;
         private static SerialPort _serialPort;
         private static IWebSocketConnection _iConnection;
-
         #endregion
         public FrmMain()
         {
@@ -30,6 +29,7 @@ namespace SuperService
         /// <param name="baudRate">波特率</param>
         public static void OpenSerialPort(string comName, int baudRate)
         {
+
             _serialPort?.Close();
             _serialPort =
                 new SerialPort(comName, baudRate, Parity.None, 8, StopBits.One)
@@ -48,15 +48,23 @@ namespace SuperService
             _serialPort.Close();
         }
 
+        /// <summary>
+        /// 向串口写数据
+        /// </summary>
+        /// <param name="text"></param>
         public static void WirteSerialPort(string text)
         {
-            if (_serialPort != null)
+            if (_serialPort != null && _serialPort.IsOpen)
             {
                 //对于中文的话,要先对其进行编码,将其转换成 _Base64String ,否则你得不到中文字符串的 
                 byte[] data = Encoding.Unicode.GetBytes(text);
                 string str = Convert.ToBase64String(data);
                 _serialPort.WriteLine(str);
                 CloseSerialPort();
+            }
+            else
+            {
+                MessageBox.Show(@"请先打开串口！");
             }
 
         }
@@ -65,23 +73,10 @@ namespace SuperService
         /// 获取串口列表
         /// </summary>
         /// <returns></returns>
-        public static void GetSerialPortList()
+        public static string[] GetSerialPortList()
         {
             string[] serialPortNames = SerialPort.GetPortNames();
-            var obj = new
-            {
-                Method = "GetSerialPortList",
-                Data = serialPortNames
-            };
-            var json = JsonConvert.SerializeObject(obj);
-            try
-            {
-                _iConnection.Send(json);
-            }
-            catch
-            {
-                // ignored
-            }
+            return serialPortNames;
         }
 
         /// <summary>
@@ -112,7 +107,7 @@ namespace SuperService
         /// <summary>
         /// 启动WebSocket服务监听
         /// </summary>
-        public static void StartWebSocket()
+        public void StartWebSocket()
         {
             var server = new WebSocketServer("ws://0.0.0.0:8181");
             server.Start(socket =>
@@ -126,24 +121,10 @@ namespace SuperService
             });
         }
 
-        public static void GetMacAddress()
+        public static string GetMacAddress()
         {
             var macList = MacHelper.GetMacList();
-            var obj = new
-            {
-                Method = "GetMacAddress",
-                Data = macList[0]
-            };
-
-            var json = JsonConvert.SerializeObject(obj);
-            try
-            {
-                _iConnection.Send(json);
-            }
-            catch
-            {
-                // ignored
-            }
+            return macList[0];
         }
 
         public static void OpenDoor(string no)
@@ -205,7 +186,7 @@ namespace SuperService
             }
         }
 
-        public static void HandleWebSocket(string message)
+        public void HandleWebSocket(string message)
         {
             var obj = JsonConvert.DeserializeObject<dynamic>(message);
             switch (obj.command.ToString())
@@ -219,14 +200,95 @@ namespace SuperService
                     CloseSerialPort();
                     break;
                 case "GetSerialPortList":
-                    GetSerialPortList();
+
+                    #region 获取串口列表
+
+                    var serialPortList = GetSerialPortList();
+                    var serialPortListObj = new
+                    {
+                        Method = "GetSerialPortList",
+                        Data = serialPortList
+                    };
+                    try
+                    {
+                        _iConnection.Send(JsonConvert.SerializeObject(serialPortListObj));
+                    }
+                    catch
+                    {
+                        // ignored
+                    }
+
+                    #endregion
+
                     break;
                 case "GetMacAddress":
-                    GetMacAddress();
+
+                    #region 获取Mac地址
+
+                    var macAddress = GetMacAddress();
+                    var macAddressObj = new
+                    {
+                        Method = "GetMacAddress",
+                        Data = macAddress
+                    };
+                    try
+                    {
+                        _iConnection.Send(JsonConvert.SerializeObject(macAddressObj));
+                    }
+                    catch
+                    {
+                        // ignored
+                    }
+
+                    #endregion
+
                     break;
                 case "OpenDoor":
                     var no = obj.no.ToString();
                     OpenDoor(no);
+                    break;
+                case "WriteCpuCard":
+
+                    #region CPU写卡
+
+                    var text = obj.text.ToString();
+                    var port = Convert.ToInt16(obj.port);
+                    var rate = Convert.ToInt32(obj.rate);
+                    var bWrite = WriteCpuCard(text, port, rate);
+                    var writeJson = new
+                    {
+                        Method = "",
+                        Data = bWrite
+                    };
+
+                    try
+                    {
+                        _iConnection.Send(JsonConvert.SerializeObject(writeJson));
+                    }
+                    catch
+                    {
+                        // ignored
+                    }
+
+                    #endregion
+
+                    break;
+                case "ReadCpuCard":
+
+                    #region CPU读卡
+
+                    var readPort = Convert.ToInt16(obj.port);
+                    var readRate = Convert.ToInt32(obj.rate);
+                    var readText = ReadCpuCard(readPort, readRate);
+                    var readJson = new
+                    {
+                        Method = "ReadCpuCard",
+                        Data = readText
+                    };
+                    _iConnection.Send(JsonConvert.SerializeObject(readJson));
+
+                    #endregion
+
                     break;
             }
         }
@@ -238,7 +300,7 @@ namespace SuperService
 
         private void FrmMain_Activated(object sender, EventArgs e)
         {
-            Hide();
+            //Hide();
         }
 
         private void 退出ToolStripMenuItem_Click(object sender, EventArgs e)
@@ -252,7 +314,113 @@ namespace SuperService
 
         private void 关于ToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            MessageBox.Show(_version.ToString("0.0"));
+            MessageBox.Show(Version.ToString("0.0"));
+        }
+
+
+
+        #region CPU卡相关操作
+
+        /// <summary>
+        /// 打开CPU读卡器端口
+        /// </summary>
+        /// <param name="port"></param>
+        /// <param name="buadRate"></param>
+        /// <returns></returns>
+        public bool OpenCpuPort(short port, int buadRate)
+        {
+            WriteLog("CPU读卡器端口号：" + port);
+            WriteLog("CPU读卡器波特率：" + buadRate);
+            var bOpen = axCpuCardOCX1.OpenPort(port, buadRate);
+            WriteLog("CPU读卡器端口打开状态：" + bOpen);
+            return bOpen;
+        }
+
+        /// <summary>
+        /// 关闭CPU读卡器端口
+        /// </summary>
+        public void CloseCpuPort()
+        {
+            axCpuCardOCX1.ClosePort();
+            WriteLog("CPU读卡器端口关闭！");
+        }
+
+        /// <summary>
+        /// CPU写卡数据
+        /// </summary>
+        /// <param name="text"></param>
+        /// <param name="port"></param>
+        /// <param name="baudRate"></param>
+        /// <returns></returns>
+        public bool WriteCpuCard(string text, short port, int baudRate)
+        {
+            try
+            {
+                var bOpen = OpenCpuPort(port, baudRate);
+                if (bOpen)
+                {
+                    WriteLog("CPU读卡器写卡原始文本：" + text);
+                    byte[] data = Encoding.UTF8.GetBytes(text);
+                    string str = Convert.ToBase64String(data);
+                    WriteLog("CPU读卡器写卡Base64文本：" + str);
+                    var result = axCpuCardOCX1.SetFileDataBinBase64(str);
+                    WriteLog("CPU读卡器写卡状态：" + result);
+                    CloseCpuPort();
+                    return result;
+                }
+            }
+            catch (Exception e)
+            {
+                WriteLog("写卡报错：" + e.Message);
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// CPU读卡
+        /// </summary>
+        /// <returns></returns>
+        public string ReadCpuCard(short port, int rate)
+        {
+            try
+            {
+                var bOpen = OpenCpuPort(port, rate);
+                if (bOpen)
+                {
+                    var text = axCpuCardOCX1.GetFileDataBinBase64();
+                    WriteLog("CPU卡Base64文本：" + text);
+                    byte[] outputb = Convert.FromBase64String(text);
+                    string orgStr = Encoding.UTF8.GetString(outputb);
+                    WriteLog("CPU卡解码后文本：" + orgStr);
+                    CloseCpuPort();
+                    return orgStr;
+                }
+
+            }
+            catch (Exception e)
+            {
+                WriteLog("读卡报错：" + e.Message);
+            }
+            return "";
+        }
+
+        #endregion
+
+        private delegate void WriteLogDelegate(string message);
+
+        /// <summary>
+        /// 记录日志
+        /// </summary>
+        /// <param name="message"></param>
+        private void WriteLog(string message)
+        {
+            if (rtxtLog.InvokeRequired == false)
+                rtxtLog.AppendText(DateTime.Now + "|" + message + "\r\n");
+            else
+            {
+                var writeLogDelegate = new WriteLogDelegate(WriteLog);
+                rtxtLog.Invoke(writeLogDelegate, message);
+            }
         }
     }
 }

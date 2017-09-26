@@ -34,6 +34,14 @@
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
+    <PlatformTarget>x86</PlatformTarget>
+    <OutputPath>bin\x86\Debug\</OutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
+    <PlatformTarget>x86</PlatformTarget>
+    <OutputPath>bin\x86\Release\</OutputPath>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Fleck, Version=0.14.0.59, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Fleck.0.14.0.59\lib\net40\Fleck.dll</HintPath>
@@ -91,6 +99,25 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Images\Icon.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <COMReference Include="AxCPUCARDOCXLib">
+      <Guid>{C6F0EA72-13DC-410D-B1D0-8F47A22426DC}</Guid>
+      <VersionMajor>1</VersionMajor>
+      <VersionMinor>0</VersionMinor>
+      <Lcid>0</Lcid>
+      <WrapperTool>aximp</WrapperTool>
+      <Isolated>False</Isolated>
+    </COMReference>
+    <COMReference Include="CPUCARDOCXLib">
+      <Guid>{C6F0EA72-13DC-410D-B1D0-8F47A22426DC}</Guid>
+      <VersionMajor>1</VersionMajor>
+      <VersionMinor>0</VersionMinor>
+      <Lcid>0</Lcid>
+      <WrapperTool>tlbimp</WrapperTool>
+      <Isolated>False</Isolated>
+      <EmbedInteropTypes>False</EmbedInteropTypes>
+    </COMReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
