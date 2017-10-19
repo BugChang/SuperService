@@ -52,52 +52,56 @@
             // 
             // contextMenuStrip1
             // 
+            this.contextMenuStrip1.ImageScalingSize = new System.Drawing.Size(24, 24);
             this.contextMenuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.关于ToolStripMenuItem,
             this.退出ToolStripMenuItem});
             this.contextMenuStrip1.Name = "contextMenuStrip1";
-            this.contextMenuStrip1.Size = new System.Drawing.Size(101, 48);
+            this.contextMenuStrip1.Size = new System.Drawing.Size(117, 60);
             // 
             // 关于ToolStripMenuItem
             // 
             this.关于ToolStripMenuItem.Name = "关于ToolStripMenuItem";
-            this.关于ToolStripMenuItem.Size = new System.Drawing.Size(100, 22);
+            this.关于ToolStripMenuItem.Size = new System.Drawing.Size(116, 28);
             this.关于ToolStripMenuItem.Text = "关于";
             this.关于ToolStripMenuItem.Click += new System.EventHandler(this.关于ToolStripMenuItem_Click);
             // 
             // 退出ToolStripMenuItem
             // 
             this.退出ToolStripMenuItem.Name = "退出ToolStripMenuItem";
-            this.退出ToolStripMenuItem.Size = new System.Drawing.Size(100, 22);
+            this.退出ToolStripMenuItem.Size = new System.Drawing.Size(116, 28);
             this.退出ToolStripMenuItem.Text = "退出";
             this.退出ToolStripMenuItem.Click += new System.EventHandler(this.退出ToolStripMenuItem_Click);
             // 
             // axCpuCardOCX1
             // 
-           this.axCpuCardOCX1.Enabled = true;
-           this.axCpuCardOCX1.Location = new System.Drawing.Point(12, 12);
-           this.axCpuCardOCX1.Name = "axCpuCardOCX1";
-           this.axCpuCardOCX1.OcxState = ((System.Windows.Forms.AxHost.State)(resources.GetObject("axCpuCardOCX1.OcxState")));
-           this.axCpuCardOCX1.Size = new System.Drawing.Size(82, 50);
-           this.axCpuCardOCX1.TabIndex = 12;
+            this.axCpuCardOCX1.Enabled = true;
+            this.axCpuCardOCX1.Location = new System.Drawing.Point(12, 12);
+            this.axCpuCardOCX1.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.axCpuCardOCX1.Name = "axCpuCardOCX1";
+            this.axCpuCardOCX1.OcxState = ((System.Windows.Forms.AxHost.State)(resources.GetObject("axCpuCardOCX1.OcxState")));
+            this.axCpuCardOCX1.Size = new System.Drawing.Size(276, 140);
+            this.axCpuCardOCX1.TabIndex = 12;
             this.axCpuCardOCX1.Visible = false;
             // 
             // rtxtLog
             // 
-           this.rtxtLog.Dock = System.Windows.Forms.DockStyle.Fill;
-           this.rtxtLog.Location = new System.Drawing.Point(0, 0);
-           this.rtxtLog.Name = "rtxtLog";
-           this.rtxtLog.Size = new System.Drawing.Size(427, 262);
-           this.rtxtLog.TabIndex = 13;
+            this.rtxtLog.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.rtxtLog.Location = new System.Drawing.Point(0, 0);
+            this.rtxtLog.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.rtxtLog.Name = "rtxtLog";
+            this.rtxtLog.Size = new System.Drawing.Size(640, 393);
+            this.rtxtLog.TabIndex = 13;
             this.rtxtLog.Text = "";
             // 
             // FrmMain
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 18F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(427, 262);
+            this.ClientSize = new System.Drawing.Size(640, 393);
             this.Controls.Add(this.rtxtLog);
             this.Controls.Add(this.axCpuCardOCX1);
+            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.Name = "FrmMain";
             this.Text = "FrmMain";
             this.Activated += new System.EventHandler(this.FrmMain_Activated);

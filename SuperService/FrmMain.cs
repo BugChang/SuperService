@@ -31,13 +31,21 @@ namespace SuperService
         {
 
             _serialPort?.Close();
-            _serialPort =
-                new SerialPort(comName, baudRate, Parity.None, 8, StopBits.One)
-                {
-                    Handshake = Handshake.RequestToSendXOnXOff
-                };
-            _serialPort.DataReceived += _serialPort_DataReceived;
-            _serialPort.Open();
+            try
+            {
+                _serialPort =
+                                new SerialPort(comName, baudRate, Parity.None, 8, StopBits.One)
+                                {
+                                    Handshake = Handshake.RequestToSendXOnXOff
+                                };
+                _serialPort.DataReceived += _serialPort_DataReceived;
+                _serialPort.Open();
+            }
+            catch 
+            {
+                
+            }
+
         }
 
         /// <summary>
@@ -86,6 +94,7 @@ namespace SuperService
         /// <param name="e"></param>
         private static void _serialPort_DataReceived(object sender, SerialDataReceivedEventArgs e)
         {
+            _serialPort.Encoding= Encoding.GetEncoding("GB2312");
             var text = _serialPort.ReadExisting();
             var value = text.Replace("\u0002", "").Replace("\u0003", "").Replace("\r", "").Replace("\n", "").Replace("\t", "");
             var obj = new
@@ -300,7 +309,7 @@ namespace SuperService
 
         private void FrmMain_Activated(object sender, EventArgs e)
         {
-            //Hide();
+            Hide();
         }
 
         private void 退出ToolStripMenuItem_Click(object sender, EventArgs e)
