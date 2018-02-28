@@ -6,6 +6,7 @@ using System.Text;
 using System.Windows.Forms;
 using Fleck;
 using Newtonsoft.Json;
+using System.Threading;
 
 namespace SuperService
 {
@@ -41,9 +42,9 @@ namespace SuperService
                 _serialPort.DataReceived += _serialPort_DataReceived;
                 _serialPort.Open();
             }
-            catch 
+            catch
             {
-                
+
             }
 
         }
@@ -94,7 +95,8 @@ namespace SuperService
         /// <param name="e"></param>
         private static void _serialPort_DataReceived(object sender, SerialDataReceivedEventArgs e)
         {
-            _serialPort.Encoding= Encoding.GetEncoding("GB2312");
+            _serialPort.Encoding = Encoding.GetEncoding("GB2312");
+            Thread.Sleep(500);
             var text = _serialPort.ReadExisting();
             var value = text.Replace("\u0002", "").Replace("\u0003", "").Replace("\r", "").Replace("\n", "").Replace("\t", "");
             var obj = new
@@ -266,7 +268,7 @@ namespace SuperService
                     var bWrite = WriteCpuCard(text, port, rate);
                     var writeJson = new
                     {
-                        Method = "",
+                        Method = "WriteCpuCard",
                         Data = bWrite
                     };
 
@@ -299,12 +301,32 @@ namespace SuperService
                     #endregion
 
                     break;
+                case "OpenCpuCom":
+                    var port1 = Convert.ToInt16(obj.port);
+                    var rate1 = Convert.ToInt32(obj.rate);
+                    OpenCpuCom(port1, rate1);
+                    break;
+                case "CloseCpuCom":
+                    CloseCpuPort();
+                    break;
+                case "OpenFile":
+                    var filePath = obj.filePath.ToString();
+                    System.Diagnostics.Process.Start(filePath);
+                    break;
+                case "TaoHong":
+                    var wordPath = obj.filePath.ToString();
+                    var oldStr = obj.oldStr.ToString().Split('$');
+                    var newStr = obj.newStr.ToString().Split('$');
+                    WordReplace(wordPath, oldStr, newStr);
+                    _iConnection.Send("ok");
+                    break;
             }
         }
 
         private void FrmMain_Load(object sender, EventArgs e)
         {
             StartWebSocket();
+            axCpuCardOCX1.OnCardIn += AxCpuCardOCX1_OnCardIn;
         }
 
         private void FrmMain_Activated(object sender, EventArgs e)
@@ -385,6 +407,17 @@ namespace SuperService
             return false;
         }
 
+        public void OpenCpuCom(short port, int baudRate)
+        {
+            CloseCpuPort();
+            OpenCpuPort(port, baudRate);
+        }
+
+        public void CloseCpuCom()
+        {
+            CloseCpuPort();
+        }
+
         /// <summary>
         /// CPU读卡
         /// </summary>
@@ -413,6 +446,16 @@ namespace SuperService
             return "";
         }
 
+        private void AxCpuCardOCX1_OnCardIn(object sender, AxCPUCARDOCXLib._DCpuCardOCXEvents_OnCardInEvent e)
+        {
+            var carNoJson = new
+            {
+                Method = "GetCpuCardNo",
+                Data = e.cardNO.ToUpper()
+            };
+            _iConnection.Send(JsonConvert.SerializeObject(carNoJson));
+        }
+
         #endregion
 
         private delegate void WriteLogDelegate(string message);
@@ -430,6 +473,48 @@ namespace SuperService
                 var writeLogDelegate = new WriteLogDelegate(WriteLog);
                 rtxtLog.Invoke(writeLogDelegate, message);
             }
+        }
+
+        /// <summary>
+        /// 替换word中的文字
+        /// </summary>
+        /// <param name="filePath">文件的路径</param>
+        /// <param name="strOld">查找的文字</param>
+        /// <param name="strNew">替换的文字</param>
+        private void WordReplace(string filePath, string[] strOld, string[] strNew)
+        {
+            Microsoft.Office.Interop.Word._Application app = new Microsoft.Office.Interop.Word.ApplicationClass();
+            object nullobj = System.Reflection.Missing.Value;
+            object file = filePath;
+            Microsoft.Office.Interop.Word._Document doc = app.Documents.Open(
+            ref file, ref nullobj, ref nullobj,
+            ref nullobj, ref nullobj, ref nullobj,
+            ref nullobj, ref nullobj, ref nullobj,
+            ref nullobj, ref nullobj, ref nullobj,
+            ref nullobj, ref nullobj, ref nullobj, ref nullobj) as Microsoft.Office.Interop.Word._Document;
+            for (int i = 0; i < strOld.Length; i++)
+            {
+                app.Selection.Find.ClearFormatting();
+                app.Selection.Find.Replacement.ClearFormatting();
+                app.Selection.Find.Text = strOld[i];
+                app.Selection.Find.Replacement.Text = strNew[i];
+                object objReplace = Microsoft.Office.Interop.Word.WdReplace.wdReplaceAll;
+                app.Selection.Find.Execute(ref nullobj, ref nullobj, ref nullobj,
+                                           ref nullobj, ref nullobj, ref nullobj,
+                                           ref nullobj, ref nullobj, ref nullobj,
+                                           ref nullobj, ref objReplace, ref nullobj,
+                                           ref nullobj, ref nullobj, ref nullobj);
+            }
+
+            //格式化
+            //doc.Content.AutoFormat();
+            //清空Range对象
+            //Microsoft.Office.Interop.Word.Range range = null;
+            //保存
+            doc.Save();
+            //Microsoft.Office.Interop.Word.Range range = null;
+            doc.Close(ref nullobj, ref nullobj, ref nullobj);
+            app.Quit(ref nullobj, ref nullobj, ref nullobj);
         }
     }
 }
