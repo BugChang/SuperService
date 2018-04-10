@@ -120,7 +120,10 @@ namespace SuperService
         /// </summary>
         public void StartWebSocket()
         {
-            var server = new WebSocketServer("ws://0.0.0.0:8181");
+            var server = new WebSocketServer("ws://0.0.0.0:8181")
+            {
+                RestartAfterListenError = true
+            };
             server.Start(socket =>
             {
                 socket.OnOpen = () =>
@@ -329,11 +332,6 @@ namespace SuperService
             axCpuCardOCX1.OnCardIn += AxCpuCardOCX1_OnCardIn;
         }
 
-        private void FrmMain_Activated(object sender, EventArgs e)
-        {
-            Hide();
-        }
-
         private void 退出ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             DialogResult dialogResult = MessageBox.Show(@"确定退出？", @"系统提示", MessageBoxButtons.OKCancel);
@@ -363,6 +361,7 @@ namespace SuperService
             WriteLog("CPU读卡器端口号：" + port);
             WriteLog("CPU读卡器波特率：" + buadRate);
             var bOpen = axCpuCardOCX1.OpenPort(port, buadRate);
+            Thread.Sleep(500);
             WriteLog("CPU读卡器端口打开状态：" + bOpen);
             return bOpen;
         }
@@ -394,10 +393,15 @@ namespace SuperService
                     byte[] data = Encoding.UTF8.GetBytes(text);
                     string str = Convert.ToBase64String(data);
                     WriteLog("CPU读卡器写卡Base64文本：" + str);
-                    var result = axCpuCardOCX1.SetFileDataBinBase64(str);
-                    WriteLog("CPU读卡器写卡状态：" + result);
+                    if (axCpuCardOCX1.IsCardAvailabile)
+                    {
+                        var result = axCpuCardOCX1.SetFileDataBinBase64(str);
+                        WriteLog("CPU读卡器写卡状态：" + result);
+                        return result;
+                    }
+                    WriteLog("未检测到卡片");
                     CloseCpuPort();
-                    return result;
+
                 }
             }
             catch (Exception e)
@@ -515,6 +519,16 @@ namespace SuperService
             //Microsoft.Office.Interop.Word.Range range = null;
             doc.Close(ref nullobj, ref nullobj, ref nullobj);
             app.Quit(ref nullobj, ref nullobj, ref nullobj);
+        }
+
+        private void 隐藏toolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Hide();
+        }
+
+        private void notifyIcon1_MouseDoubleClick(object sender, MouseEventArgs e)
+        {
+            Show();
         }
     }
 }
