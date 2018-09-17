@@ -41,10 +41,23 @@ namespace SuperService
                                 };
                 _serialPort.DataReceived += _serialPort_DataReceived;
                 _serialPort.Open();
+                var obj = new
+                {
+                    Method = "OpenSerialPort",
+                    Data = true
+                };
+                var json = JsonConvert.SerializeObject(obj);
+                _iConnection.Send(json);
             }
-            catch
+            catch (Exception)
             {
-
+                var obj = new
+                {
+                    Method = "OpenSerialPort",
+                    Data = false
+                };
+                var json = JsonConvert.SerializeObject(obj);
+                _iConnection.Send(json);
             }
 
         }
@@ -202,128 +215,136 @@ namespace SuperService
 
         public void HandleWebSocket(string message)
         {
-            var obj = JsonConvert.DeserializeObject<dynamic>(message);
-            switch (obj.command.ToString())
+            try
             {
-                case "OpenSerialPort":
-                    var serialPortName = obj.serialPortName.ToString();
-                    var baudRate = int.Parse(obj.baudRate.ToString());
-                    OpenSerialPort(serialPortName, baudRate);
-                    break;
-                case "CloseSerialPort":
-                    CloseSerialPort();
-                    break;
-                case "GetSerialPortList":
+                var obj = JsonConvert.DeserializeObject<dynamic>(message);
+                switch (obj.command.ToString())
+                {
+                    case "OpenSerialPort":
+                        var serialPortName = obj.serialPortName.ToString();
+                        var baudRate = int.Parse(obj.baudRate.ToString());
+                        OpenSerialPort(serialPortName, baudRate);
+                        break;
+                    case "CloseSerialPort":
+                        CloseSerialPort();
+                        break;
+                    case "GetSerialPortList":
 
-                    #region 获取串口列表
+                        #region 获取串口列表
 
-                    var serialPortList = GetSerialPortList();
-                    var serialPortListObj = new
-                    {
-                        Method = "GetSerialPortList",
-                        Data = serialPortList
-                    };
-                    try
-                    {
-                        _iConnection.Send(JsonConvert.SerializeObject(serialPortListObj));
-                    }
-                    catch
-                    {
-                        // ignored
-                    }
+                        var serialPortList = GetSerialPortList();
+                        var serialPortListObj = new
+                        {
+                            Method = "GetSerialPortList",
+                            Data = serialPortList
+                        };
+                        try
+                        {
+                            _iConnection.Send(JsonConvert.SerializeObject(serialPortListObj));
+                        }
+                        catch
+                        {
+                            // ignored
+                        }
 
-                    #endregion
+                        #endregion
 
-                    break;
-                case "GetMacAddress":
+                        break;
+                    case "GetMacAddress":
 
-                    #region 获取Mac地址
+                        #region 获取Mac地址
 
-                    var macAddress = GetMacAddress();
-                    var macAddressObj = new
-                    {
-                        Method = "GetMacAddress",
-                        Data = macAddress
-                    };
-                    try
-                    {
-                        _iConnection.Send(JsonConvert.SerializeObject(macAddressObj));
-                    }
-                    catch
-                    {
-                        // ignored
-                    }
+                        var macAddress = GetMacAddress();
+                        var macAddressObj = new
+                        {
+                            Method = "GetMacAddress",
+                            Data = macAddress
+                        };
+                        try
+                        {
+                            _iConnection.Send(JsonConvert.SerializeObject(macAddressObj));
+                        }
+                        catch
+                        {
+                            // ignored
+                        }
 
-                    #endregion
+                        #endregion
 
-                    break;
-                case "OpenDoor":
-                    var no = obj.no.ToString();
-                    OpenDoor(no);
-                    break;
-                case "WriteCpuCard":
+                        break;
+                    case "OpenDoor":
+                        var no = obj.no.ToString();
+                        OpenDoor(no);
+                        break;
+                    case "WriteCpuCard":
 
-                    #region CPU写卡
+                        #region CPU写卡
 
-                    var text = obj.text.ToString();
-                    var port = Convert.ToInt16(obj.port);
-                    var rate = Convert.ToInt32(obj.rate);
-                    var bWrite = WriteCpuCard(text, port, rate);
-                    var writeJson = new
-                    {
-                        Method = "WriteCpuCard",
-                        Data = bWrite
-                    };
+                        var text = obj.text.ToString();
+                        var port = Convert.ToInt16(obj.port);
+                        var rate = Convert.ToInt32(obj.rate);
+                        var bWrite = WriteCpuCard(text, port, rate);
+                        var writeJson = new
+                        {
+                            Method = "WriteCpuCard",
+                            Data = bWrite
+                        };
 
-                    try
-                    {
-                        _iConnection.Send(JsonConvert.SerializeObject(writeJson));
-                    }
-                    catch
-                    {
-                        // ignored
-                    }
+                        try
+                        {
+                            _iConnection.Send(JsonConvert.SerializeObject(writeJson));
+                        }
+                        catch
+                        {
+                            // ignored
+                        }
 
-                    #endregion
+                        #endregion
 
-                    break;
-                case "ReadCpuCard":
+                        break;
+                    case "ReadCpuCard":
 
-                    #region CPU读卡
+                        #region CPU读卡
 
-                    var readPort = Convert.ToInt16(obj.port);
-                    var readRate = Convert.ToInt32(obj.rate);
-                    var readText = ReadCpuCard(readPort, readRate);
-                    var readJson = new
-                    {
-                        Method = "ReadCpuCard",
-                        Data = readText
-                    };
-                    _iConnection.Send(JsonConvert.SerializeObject(readJson));
+                        var readPort = Convert.ToInt16(obj.port);
+                        var readRate = Convert.ToInt32(obj.rate);
+                        var readText = ReadCpuCard(readPort, readRate);
+                        var readJson = new
+                        {
+                            Method = "ReadCpuCard",
+                            Data = readText
+                        };
+                        _iConnection.Send(JsonConvert.SerializeObject(readJson));
 
-                    #endregion
+                        #endregion
 
-                    break;
-                case "OpenCpuCom":
-                    var port1 = Convert.ToInt16(obj.port);
-                    var rate1 = Convert.ToInt32(obj.rate);
-                    OpenCpuCom(port1, rate1);
-                    break;
-                case "CloseCpuCom":
-                    CloseCpuPort();
-                    break;
-                case "OpenFile":
-                    var filePath = obj.filePath.ToString();
-                    System.Diagnostics.Process.Start(filePath);
-                    break;
-                case "TaoHong":
-                    var wordPath = obj.filePath.ToString();
-                    var oldStr = obj.oldStr.ToString().Split('$');
-                    var newStr = obj.newStr.ToString().Split('$');
-                    WordReplace(wordPath, oldStr, newStr);
-                    _iConnection.Send("ok");
-                    break;
+                        break;
+                    case "OpenCpuCom":
+                        var port1 = Convert.ToInt16(obj.port);
+                        var rate1 = Convert.ToInt32(obj.rate);
+                        OpenCpuCom(port1, rate1);
+                        break;
+                    case "CloseCpuCom":
+                        CloseCpuPort();
+                        break;
+                    case "OpenFile":
+                        var filePath = obj.filePath.ToString();
+                        System.Diagnostics.Process.Start(filePath);
+                        break;
+                    case "TaoHong":
+                        var wordPath = obj.filePath.ToString();
+                        var oldStr = obj.oldStr.ToString().Split('$');
+                        var newStr = obj.newStr.ToString().Split('$');
+                        WordReplace(wordPath, oldStr, newStr);
+                        _iConnection.Send("ok");
+                        break;
+                }
             }
+            catch 
+            {
+              
+            }
+           
         }
 
         private void FrmMain_Load(object sender, EventArgs e)
