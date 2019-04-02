@@ -17,6 +17,7 @@ namespace SuperService
         private const int Version = 1;
         private static SerialPort _serialPort;
         private static IWebSocketConnection _iConnection;
+        public static bool BHide = true;
         #endregion
         public FrmMain()
         {
@@ -501,7 +502,17 @@ namespace SuperService
 
         private void notifyIcon1_MouseDoubleClick(object sender, MouseEventArgs e)
         {
+            BHide = false;
             Show();
+        }
+
+        private void FrmMain_Activated(object sender, EventArgs e)
+        {
+            if (BHide)
+            {
+                Hide();
+            }
+           
         }
     }
 }
