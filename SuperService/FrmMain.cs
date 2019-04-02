@@ -331,13 +331,6 @@ namespace SuperService
                         var filePath = obj.filePath.ToString();
                         System.Diagnostics.Process.Start(filePath);
                         break;
-                    case "TaoHong":
-                        var wordPath = obj.filePath.ToString();
-                        var oldStr = obj.oldStr.ToString().Split('$');
-                        var newStr = obj.newStr.ToString().Split('$');
-                        WordReplace(wordPath, oldStr, newStr);
-                        _iConnection.Send("ok");
-                        break;
                 }
             }
             catch 
@@ -500,47 +493,6 @@ namespace SuperService
             }
         }
 
-        /// <summary>
-        /// 替换word中的文字
-        /// </summary>
-        /// <param name="filePath">文件的路径</param>
-        /// <param name="strOld">查找的文字</param>
-        /// <param name="strNew">替换的文字</param>
-        private void WordReplace(string filePath, string[] strOld, string[] strNew)
-        {
-            Microsoft.Office.Interop.Word._Application app = new Microsoft.Office.Interop.Word.ApplicationClass();
-            object nullobj = System.Reflection.Missing.Value;
-            object file = filePath;
-            Microsoft.Office.Interop.Word._Document doc = app.Documents.Open(
-            ref file, ref nullobj, ref nullobj,
-            ref nullobj, ref nullobj, ref nullobj,
-            ref nullobj, ref nullobj, ref nullobj,
-            ref nullobj, ref nullobj, ref nullobj,
-            ref nullobj, ref nullobj, ref nullobj, ref nullobj) as Microsoft.Office.Interop.Word._Document;
-            for (int i = 0; i < strOld.Length; i++)
-            {
-                app.Selection.Find.ClearFormatting();
-                app.Selection.Find.Replacement.ClearFormatting();
-                app.Selection.Find.Text = strOld[i];
-                app.Selection.Find.Replacement.Text = strNew[i];
-                object objReplace = Microsoft.Office.Interop.Word.WdReplace.wdReplaceAll;
-                app.Selection.Find.Execute(ref nullobj, ref nullobj, ref nullobj,
-                                           ref nullobj, ref nullobj, ref nullobj,
-                                           ref nullobj, ref nullobj, ref nullobj,
-                                           ref nullobj, ref objReplace, ref nullobj,
-                                           ref nullobj, ref nullobj, ref nullobj);
-            }
-
-            //格式化
-            //doc.Content.AutoFormat();
-            //清空Range对象
-            //Microsoft.Office.Interop.Word.Range range = null;
-            //保存
-            doc.Save();
-            //Microsoft.Office.Interop.Word.Range range = null;
-            doc.Close(ref nullobj, ref nullobj, ref nullobj);
-            app.Quit(ref nullobj, ref nullobj, ref nullobj);
-        }
 
         private void 隐藏toolStripMenuItem_Click(object sender, EventArgs e)
         {
